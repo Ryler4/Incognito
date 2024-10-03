@@ -1,3 +1,20 @@
+/**
+ * Incognito
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 /*
   _____                   _                _     _                                                                      
  |  __ \                 | |              | |   | |                                                                     
@@ -23,6 +40,7 @@ import { createComponent } from './component.js';
 class App extends EventEmitter {
     constructor(hashes = []) {
         super();
+		this.bare = new BareMux.BareClient();
         this.header = createComponent(document.querySelector('header'));
         this.search = createComponent(document.querySelector('header .search'));
         this.nav = createComponent(document.querySelector('nav'));
@@ -95,6 +113,23 @@ class App extends EventEmitter {
 
         return element;
     };
+	
+	#registerSW() {
+		return navigator.serviceWorker.getRegistration('./uv.sw-handler.js').then((worker) => {
+			if(worker) return worker;
+			return navigator.serviceWorker.register('./uv.sw-handler.js');
+		});
+	}
+
+	async registerSW() {
+		const worker = await this.#registerSW();
+		this.setTransport();
+		return worker;
+	}
+
+	setTransport() {
+		BareMux.SetTransport("CurlMod.LibcurlClient", { wisp: `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/wisp/` });
+	}
 };
 
 export { App };

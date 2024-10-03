@@ -1,3 +1,20 @@
+/**
+ * Incognito
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 /*
   _____                   _                _     _                                                                      
  |  __ \                 | |              | |   | |                                                                     
@@ -22,20 +39,11 @@ const tips = [
     'Access popular media & sites easily in <a href="#apps">apps.</a>',
     'This <a href="https://github.com/amethystnetwork-dev/Incognito">unofficial In&#173;cog&#173;nito version</a> is made by Am&#173;et&#173;hy&#173;st Net&#173;wo&#173;rk.',
     'Join the <a href="#community">Am&#173;et&#173;hyst Ne&#173;tw&#173;ork d&#173;i&#173;sco&#173;rd</a>',
-    'Get answers to questions in <a href="#support">support</a>',
-    `Check out <a onclick="(${ah.toString()})()">Ali&#173;enHu&#173;b</a>`
+    'Get answers to questions in <a href="#support">support</a>'
 ];
 
-function ah() {
-    app.main.target.style.display = 'none';
-    app.header.target.style.display = 'none';
+import { searchProviders } from "./search.js";
 
-    const frame = document.querySelector('.access-frame');
-    frame.src = './load.html#aHR0cHM6Ly9hbGllbmh1Yi54eXovP3V0bV9zb3VyY2U9aW5jb2dfZGVwbG95JnV0bV9tZWRpdW09YW1ldGh5c3RuZXR3b3Jr';
-
-    frame.style.display = 'block';
-    document.querySelector('.access-panel').style.removeProperty('display');
-}
 
 function access(app) {
     if (document.querySelector('header').hasAttribute('data-init')) {
@@ -62,60 +70,64 @@ function access(app) {
     app.nav.settings = app.createLink('#settings', '<i class="fas fa-sliders-h secondary"></i>', {
         id: 'apps'
     })
-    if(localStorage.getItem('incog||disabletips') !== 'none') app.main.tip = app.createElement('div', tips[Math.floor(Math.random()*tips.length)], { class: 'tip' });
+    app.main.tip = app.createElement('div', (localStorage.getItem('incog||disabletips') !== 'none' ? tips[Math.floor(Math.random()*tips.length)] : ''), { class: 'tip' });
 
-    app.main.suggestions = app.createElement('div', [], {
-        class: 'suggestions',
-        style: {
-            display: 'block'
-        } 
-    });
+	async function searchSuggestions(event) {
+		app.main.suggestions.innerHTML = '';
+		if (!event.target.value) {
+			app.nav.target.style.removeProperty('display');
+			app.header.target.setAttribute('data-page', '');
+			app.main.tip.style.removeProperty('display');
+			app.search.logo.style.display = 'inline';
+			return;
+		}
 
-    app.search.input.setAttribute(
-        'oninput',
-        '(' + (async function() {
-            app.main.suggestions.innerHTML = '';
-            if (!event.target.value) {
-                app.nav.target.style.removeProperty('display');
-                app.header.target.setAttribute('data-page', '');
-		app.main.tip.style.removeProperty('display');
-                app.search.logo.style.display = 'inline';
-                return;
-            }
-	    app.main.tip.style.display = 'none';
-            app.header.target.removeAttribute('data-page');
-            app.nav.target.style.display = 'none';
-            app.search.logo.style.display = 'none';
+		app.main.tip.style.display = 'none';
+		app.header.target.removeAttribute('data-page');
+		app.nav.target.style.display = 'none';
+		app.search.logo.style.display = 'none';
 
-            clearTimeout(app.timeout);
-            app.timeout = setTimeout(async () => {
-                var mode = localStorage.getItem('incog||suggestions') || 'ddg';
-                if(mode == 'none') return;
-                const provider = app.searchProviders[mode];
-                const res = await app.bare.fetch(provider.mapQuery(event.target.value));
-                const text = await res.text();
-                const suggestions = provider.parseResponse(text);
+		clearTimeout(app.timeout);
+		app.timeout = setTimeout(async () => {
+			const providerName = localStorage.getItem('incog||suggestions');
+			const provider = searchProviders[(providerName in searchProviders) ? providerName : 'ddg'];
 
-                suggestions.forEach(element => {
-                    app.main.suggestions.append(app.createElement('div', element, { class: 'suggestion',
-                            events: {
-                                click() {
-                                    app.search.input.value = element;
-                                    const frame = document.querySelector('iframe');
-                                    document.querySelector('main').style.display = 'none';
-                                    document.querySelector('header').style.display = 'none';
-                                    frame.style.display = 'block';
-                                    frame.src = './load.html#' + encodeURIComponent(btoa(element));
-                                    document.querySelector('.access-panel').style.removeProperty('display');
-                                }
-                            }
-                        }))
+			const res = await app.bare.fetch(provider.mapQuery(event.target.value));
+			const text = await res.text();
+			const suggestions = provider.parseResponse(text);
 
-                    });
-            }, 400);
+			suggestions.forEach(element => {
+				app.main.suggestions.append(app.createElement('div', element, { class: 'suggestion',
+						events: {
+							click() {
+								app.search.input.value = element;
+								app.registerSW();
+								const frame = document.querySelector('iframe');
+								document.querySelector('main').style.display = 'none';
+								document.querySelector('header').style.display = 'none';
+								frame.style.display = 'block';
+								frame.src = './load.html#' + encodeURIComponent(btoa(element));
+								document.querySelector('.access-panel').style.removeProperty('display');
+							}
+						}
+					}))
 
-        }).toString() + ')()'
-    );
+				});
+		}, 400);
+	}
+
+	if(localStorage.getItem('incog||suggestions') !== 'none') {
+    	app.main.suggestions = app.createElement('div', [], {
+        	class: 'suggestions',
+        	style: {
+            	display: 'block'
+        	} 
+    	});
+
+		app.search.input.addEventListener('input', searchSuggestions);
+		app.once('exit', () => app.search.input.removeEventListener('input', searchSuggestions));
+	}
+
     app.search.input.setAttribute('form', 'access-form');
     app.search.submit.setAttribute('form', 'access-form');
 
@@ -124,7 +136,8 @@ function access(app) {
     if (params.has('link')) {
         app.main.target.style.display = 'none';
         app.header.target.style.display = 'none';
-        
+		app.registerSW();
+
         const frame = document.querySelector('.access-frame');
 
         frame.src = './load.html#' + encodeURIComponent(params.get('link'));

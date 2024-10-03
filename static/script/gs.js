@@ -1,3 +1,20 @@
+/**
+ * Incognito
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 /*
   _____                   _                _     _                                                                      
  |  __ \                 | |              | |   | |                                                                     
@@ -60,42 +77,42 @@ async function gs(app) {
         } 
     });
 
-    app.search.input.setAttribute(
-        'oninput',
-        '(' + (function() {
-            let count = 0;
+	function searchGames() {
+		let count = 0;
 
-            app.main.library.querySelectorAll('.gs-entry').forEach(node => {
-                if (node.getAttribute('data-title').toLowerCase().includes(app.search.input.value.toLowerCase())) {
-                    node.setAttribute('data-active', '1');
-                    count++;
-                } else {
-                    node.removeAttribute('data-active');
-                };
-            }); 
+		app.main.library.querySelectorAll('.gs-entry').forEach(node => {
+			if (node.getAttribute('data-title').toLowerCase().includes(app.search.input.value.toLowerCase())) {
+				node.setAttribute('data-active', '1');
+				count++;
+			} else {
+				node.removeAttribute('data-active');
+			};
+		}); 
 
-            app.main.library.querySelectorAll('.category').forEach(node => {
-                if (!node.querySelectorAll('.gs-library .gs-entry[data-active]').length) {
-                    node.style.display = 'none';
-                } else {
-                    node.style.removeProperty('display');
-                };
-            });
+		app.main.library.querySelectorAll('.category').forEach(node => {
+			if (!node.querySelectorAll('.gs-library .gs-entry[data-active]').length) {
+				node.style.display = 'none';
+			} else {
+				node.style.removeProperty('display');
+			};
+		});
 
-            if (!count) {
-                app.main.library.style.display = 'none';
-                app.main.emptySearch.style.display = 'block';
-            } else {
-                app.main.library.style.removeProperty('display');
-                app.main.emptySearch.style.display = 'none';
-            };
-        }).toString() + ')()'
-    )
+		if (!count) {
+			app.main.library.style.display = 'none';
+			app.main.emptySearch.style.display = 'block';
+		} else {
+			app.main.library.style.removeProperty('display');
+			app.main.emptySearch.style.display = 'none';
+		};
+	}
+
+	app.search.input.addEventListener('input', searchGames)
+	app.once('exit', () => app.search.input.removeEventListener('input', searchGames));
 };
 
 
 async function compileGs(app) {
-    const res = await fetch('./gs.json');
+    const res = await fetch('./source/gs.json');
     const json = await res.json();
 
     const list = {
@@ -163,26 +180,23 @@ async function compileGs(app) {
 
                     window.scrollTo({ top: 0 });
 
-                    app.search.back.setAttribute(
-                        'onclick', 
-                        '(' + (() => {
+					function exitGame(event) {
+						if (window.location.hash !== '#gs') return this.removeEventListener('click', exitGame);
+						
+						event.preventDefault();
+						
+						app.main.library.style.removeProperty('display');
+						app.search.input.style.removeProperty('display');
+						app.search.title.style.display = 'none';
+						app.search.title.textContent = '';
+						app.main.player.style.display = 'none';
+						app.main.player.querySelector('iframe').src = 'about:blank';
+						delete app.nav.fullscreen;
 
-                            if (window.location.hash !== '#gs') return this.removeAttribute('onclick');
-
-                            event.preventDefault();
-                            
-                            app.main.library.style.removeProperty('display');
-                            app.search.input.style.removeProperty('display');
-                            app.search.title.style.display = 'none';
-                            app.search.title.textContent = '';
-                            app.main.player.style.display = 'none';
-                            app.main.player.querySelector('iframe').src = 'about:blank';
-                            delete app.nav.fullscreen;
-
-                            this.removeAttribute('onclick');
-
-                        }).toString() + ')()'
-                    );
+						this.removeEventListener('click', exitGame);
+					}
+					
+					app.search.back.addEventListener('click', exitGame);
                    /*
                    nav(entry.location, entry.title, entry.img);
                    */

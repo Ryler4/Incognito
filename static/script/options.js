@@ -1,3 +1,20 @@
+/**
+ * Incognito
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 /*
   _____                   _                _     _                                                                      
  |  __ \                 | |              | |   | |                                                                     
@@ -532,12 +549,7 @@ The about:blank script is based off of ABC by
     tabs.switchTab('appearance');
 
     app.search.back.style.display = 'inline';
-    app.search.back.setAttribute(
-        'onclick',
-        '(' + (function(){
-            window.location.hash = '';
-        }).toString() + ')();'
-    )
+	app.search.back.href = '#';
     app.main.content = tabs.element;
 }
 
@@ -572,6 +584,21 @@ async function createAbout(app) {
             })
         )
     };
+
+	const license = `Incognito
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.`.split("").map(c => c == "\n" ? app.createElement("br") : c);
 
     return [
         app.createElement('section', [
@@ -619,7 +646,18 @@ async function createAbout(app) {
                 }
             }),
             app.createElement('div', contacts)
-        ], { class: 'data-section' }) : null
+        ], { class: 'data-section' }) : null,
+		app.createElement('section', [
+			app.createElement('span', 'License', {
+                style: {
+                    display: 'block',
+                    'margin-bottom': '6px',
+                    'font-size': '18px',
+                    'font-weight': '500'
+                }
+            }),
+			app.createElement("p", license)
+		], { class: 'data-section' })
     ]
 };
 
